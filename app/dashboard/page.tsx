@@ -1,14 +1,46 @@
-import { CalendarDays, CreditCard, Search, User, Users } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { RecentBookings } from "@/components/recent-bookings"
-import { TopArtists } from "@/components/top-artists"
-import { RecentUsers } from "@/components/recent-users"
+"use client"
+import { CalendarDays, CreditCard, Search, User, Users } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DashboardHeader } from "@/components/dashboard-header";
+import { RecentBookings } from "@/components/recent-bookings";
+import { TopArtists } from "@/components/top-artists";
+import { RecentUsers } from "@/components/recent-users";
+import { useGetData } from "@/services/queryHooks/useGetData";
+import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
+ const [packageBookings, setPackageBookings] = useState({});
+  const [serviceBookings, setServiceBookings] = useState({});
+  const [users, setUsers] = useState({});
+
+  const { data, isLoading, isError, error } = useGetData(
+    "getAllUsers",
+    "http://localhost:5000/admin/getOverviewStats"
+  );
+
+  useEffect(() => {
+    if (data?.data) {
+      setPackageBookings(data.data.packageBookings);
+      setServiceBookings(data.data.serviceBookings);
+      setUsers(data.data.users);
+    }
+  }, [data]);
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <DashboardHeader heading="Dashboard" text="Overview of your business" />
@@ -17,7 +49,11 @@ export default function DashboardPage() {
         <div className="flex-1">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search..." className="pl-8 w-full" />
+            <Input
+              type="search"
+              placeholder="Search..."
+              className="pl-8 w-full"
+            />
           </div>
         </div>
         <div className="flex gap-2">
@@ -48,42 +84,58 @@ export default function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Bookings
+                </CardTitle>
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">2,350</div>
-                <p className="text-xs text-muted-foreground">+180 from last month</p>
+                <div className="text-2xl font-bold">{packageBookings?.totalPackageBookings}</div>
+                <p className="text-xs text-muted-foreground">
+                  +180 from last month
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Artists</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Active Artists
+                </CardTitle>
                 <User className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">124</div>
-                <p className="text-xs text-muted-foreground">+19 from last month</p>
+                <div className="text-2xl font-bold">{users?.totalArtists}</div>
+                <p className="text-xs text-muted-foreground">
+                  +19 from last month
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Active Customers
+                </CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">12,234</div>
-                <p className="text-xs text-muted-foreground">+201 since last month</p>
+                <div className="text-2xl font-bold">{users?.totalCustomers}</div>
+                <p className="text-xs text-muted-foreground">
+                  +201 since last month
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Recent Transactions</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Recent Transactions
+                </CardTitle>
                 <CreditCard className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">573</div>
-                <p className="text-xs text-muted-foreground">+58 from yesterday</p>
+                <p className="text-xs text-muted-foreground">
+                  +58 from yesterday
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -91,7 +143,9 @@ export default function DashboardPage() {
             <Card className="col-span-4">
               <CardHeader>
                 <CardTitle>Recent Bookings</CardTitle>
-                <CardDescription>You have 12 bookings this month</CardDescription>
+                <CardDescription>
+                  You have 12 bookings this month
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <RecentBookings />
@@ -100,7 +154,9 @@ export default function DashboardPage() {
             <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>Top Makeup Artists</CardTitle>
-                <CardDescription>Top performing artists this month</CardDescription>
+                <CardDescription>
+                  Top performing artists this month
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <TopArtists />
@@ -110,7 +166,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>Recently Joined Users</CardTitle>
-              <CardDescription>New users who joined in the last 30 days</CardDescription>
+              <CardDescription>
+                New users who joined in the last 30 days
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <RecentUsers />
@@ -132,7 +190,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle>All Artists</CardTitle>
-              <CardDescription>Detailed view of all makeup artists</CardDescription>
+              <CardDescription>
+                Detailed view of all makeup artists
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <TopArtists extended />
@@ -152,5 +212,5 @@ export default function DashboardPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
