@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Ban, Edit, Eye, MoreHorizontal, Search, Trash2, UserCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useGetData } from "@/services/queryHooks/useGetData"
 
 const users = [
   {
@@ -105,11 +106,18 @@ export function UserList() {
   const [locationFilter, setLocationFilter] = useState("all")
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
 
-  const filteredUsers = users.filter(
+  const { data, isLoading, isError, error } = useGetData(
+        "getAllUsers",
+      "http://localhost:5000/admin/getAllUsersForAdmin"
+    );
+
+    const apiusers = data?.data || [] ;
+
+  const filteredUsers = apiusers.filter(
     (user) =>
-      (user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.id.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      (user?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user?._id.toLowerCase().includes(searchQuery.toLowerCase())) &&
       (statusFilter === "all" || user.status.toLowerCase() === statusFilter.toLowerCase()) &&
       (locationFilter === "all" || user.location.toLowerCase() === locationFilter.toLowerCase()),
   )
@@ -141,7 +149,6 @@ export function UserList() {
   const handleEditUser = (id: string) => {
     router.push(`/users/${id}/edit`)
   }
-
 
   return (
     <div className="space-y-4">
@@ -218,38 +225,38 @@ export function UserList() {
           </TableHeader>
           <TableBody>
             {filteredUsers.map((user) => (
-              <TableRow key={user.id}>
+              <TableRow key={user?._id}>
                 <TableCell>
                   <Checkbox
-                    checked={selectedUsers.includes(user.id)}
-                    onCheckedChange={() => toggleSelectUser(user.id)}
+                    checked={selectedUsers.includes(user._id)}
+                    onCheckedChange={() => toggleSelectUser(user._id)}
                     aria-label={`Select ${user.name}`}
                   />
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={user?.profile_img || "/placeholder.svg"} alt={user?.username} />
+                      <AvatarFallback>{user?.username.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium">{user.name}</span>
-                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                      <span className="text-sm font-medium">{user?.username}</span>
+                      <span className="text-xs text-muted-foreground">{user?.email}</span>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{user.location}</TableCell>
+                <TableCell>{user.city !== "N/A" ? user.city : "—"}</TableCell>
                 <TableCell>{new Date(user.joinedDate).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(user.lastActive).toLocaleDateString()}</TableCell>
-                <TableCell>{user.bookings}</TableCell>
+                <TableCell>{"-"}</TableCell>
+                <TableCell>{user?.bookingCount}</TableCell>
                 <TableCell>
                   <Badge
-                    variant={user.status === "Active" ? "default" : "secondary"}
+                    variant={user?.isLogin === "Active" ? "default" : "secondary"}
                     className={
-                      user.status === "Active" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
+                      user?.isLogin === "Active" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
                     }
                   >
-                    {user.status}
+                    {user?.isLogin}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">

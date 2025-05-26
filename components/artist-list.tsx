@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CheckCircle, Edit, Eye, MoreHorizontal, Search, Star, Trash2, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useGetData } from "@/services/queryHooks/useGetData"
 
 const artists = [
   {
@@ -80,14 +81,19 @@ const artists = [
 export function ArtistList() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [selectedArtists, setSelectedArtists] = useState<number[]>([])
+  const [selectedArtists, setSelectedArtists] = useState<number[]>([]);
 
-  const filteredArtists = artists.filter(
+    const { data , isError , isLoading , error} = useGetData("getAllUsers", "http://localhost:5000/admin/getAllArtistsForAdmin");
+
+    const apiArtists = data?.data || [];
+  
+
+  const filteredArtists = apiArtists.filter(
     (artist) =>
-      (artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        artist.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        artist.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        artist.city.toLowerCase().includes(searchQuery.toLowerCase())) &&
+      (artist?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        artist?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        artist?.specialties.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        artist?.city.toLowerCase().includes(searchQuery.toLowerCase())) &&
       (statusFilter === "all" || artist.status.toLowerCase() === statusFilter.toLowerCase()),
   )
 
@@ -117,6 +123,8 @@ const handleViewProfile = (id: number) => {
 const handleEditArtist = (id: number) => {
   router.push(`/artists/${id}/edit`)
 }
+
+console.log("data", data);
 
 
   return (
@@ -181,55 +189,55 @@ const handleEditArtist = (id: number) => {
           </TableHeader>
           <TableBody>
             {filteredArtists.map((artist) => (
-              <TableRow key={artist.id}>
+              <TableRow key={artist?._id}>
                 <TableCell>
                   <Checkbox
-                    checked={selectedArtists.includes(artist.id)}
-                    onCheckedChange={() => toggleSelectArtist(artist.id)}
-                    aria-label={`Select ${artist.name}`}
+                    checked={selectedArtists.includes(artist?._id)}
+                    onCheckedChange={() => toggleSelectArtist(artist?._id)}
+                    aria-label={`Select ${artist?.username}`}
                   />
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={artist.avatar || "/placeholder.svg"} alt={artist.name} />
-                      <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={artist?.profile_img || "/placeholder.svg"} alt={artist?.username} />
+                      <AvatarFallback>{artist?.username.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{artist.name}</span>
+                        <span className="text-sm font-medium">{artist?.username}</span>
                         {artist.featured && (
                           <Badge variant="outline" className="border-yellow-500 text-yellow-500">
                             Featured
                           </Badge>
                         )}
                       </div>
-                      <span className="text-xs text-muted-foreground">{artist.email}</span>
+                      <span className="text-xs text-muted-foreground">{artist?.email}</span>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{artist.category}</TableCell>
-                <TableCell>{artist.city}</TableCell>
+                <TableCell>{artist?.specialties[0]}</TableCell>
+                <TableCell>{artist?.city}</TableCell>
                 <TableCell>
                   <div className="flex items-center">
                     <Star className="mr-1 h-4 w-4 text-yellow-500" />
-                    <span>{artist.rating}</span>
+                    <span>{artist?.rating}</span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <Badge
                     variant={
-                      artist.status === "Approved" ? "default" : artist.status === "Pending" ? "outline" : "destructive"
+                      artist?.Status === "Approved" ? "default" : artist?.Status === "Pending" ? "outline" : "destructive"
                     }
                     className={
-                      artist.status === "Approved"
+                      artist?.Status === "Approved"
                         ? "bg-green-500 hover:bg-green-600"
-                        : artist.status === "Pending"
+                        : artist?.Status === "Pending"
                           ? "border-yellow-500 text-yellow-500"
                           : ""
                     }
                   >
-                    {artist.status}
+                    {artist?.Status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
