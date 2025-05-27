@@ -102,7 +102,7 @@ export function BookingList() {
 
 
   const filteredBookings = data?.filter(
-    (booking) =>
+    (booking: { bookingId: string; customerName: string; package: string; artistName: string; status: string }) =>
       (booking?.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
         booking?.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         booking?.package.toLowerCase().includes(searchQuery.toLowerCase()) ||

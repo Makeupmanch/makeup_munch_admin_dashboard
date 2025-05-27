@@ -114,7 +114,7 @@ export function UserList() {
     const apiusers = data?.data || [] ;
 
   const filteredUsers = apiusers.filter(
-    (user) =>
+    (user: { username: string; email: string; _id: string; status: string; location: string }) =>
       (user?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user?._id.toLowerCase().includes(searchQuery.toLowerCase())) &&
@@ -126,7 +126,7 @@ export function UserList() {
     if (selectedUsers.length === filteredUsers.length) {
       setSelectedUsers([])
     } else {
-      setSelectedUsers(filteredUsers.map((user) => user.id))
+      setSelectedUsers(filteredUsers.map((user: { id: any }) => user.id))
     }
   }
 

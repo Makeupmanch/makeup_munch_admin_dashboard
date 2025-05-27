@@ -94,7 +94,7 @@ export function ArtistList() {
         artist?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         artist?.specialties.toLowerCase().includes(searchQuery.toLowerCase()) ||
         artist?.city.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      (statusFilter === "all" || artist.status.toLowerCase() === statusFilter.toLowerCase()),
+      (statusFilter === "all" || artist.Status.toLowerCase() === statusFilter.toLowerCase()),
   )
 
   const toggleSelectAll = () => {
@@ -216,7 +216,7 @@ console.log("data", data);
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{artist?.specialties[0]}</TableCell>
+                <TableCell>{artist?.specialties}</TableCell>
                 <TableCell>{artist?.city}</TableCell>
                 <TableCell>
                   <div className="flex items-center">
