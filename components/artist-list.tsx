@@ -83,7 +83,7 @@ export function ArtistList() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedArtists, setSelectedArtists] = useState<number[]>([]);
 
-    const { data , isError , isLoading , error} = useGetData("getAllUsers", "http://localhost:5000/admin/getAllArtistsForAdmin");
+    const { data , isError , isLoading , error} = useGetData("getAllUsers", "admin/getAllArtistsForAdmin");
 
     const apiArtists = data?.data || [];
   
@@ -111,7 +111,7 @@ export function ArtistList() {
     } else {
       setSelectedArtists([...selectedArtists, id])
     }
-  }
+  } 
 
 
   const router = useRouter()

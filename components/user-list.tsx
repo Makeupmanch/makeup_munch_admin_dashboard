@@ -108,7 +108,7 @@ export function UserList() {
 
   const { data, isLoading, isError, error } = useGetData(
         "getAllUsers",
-      "http://localhost:5000/admin/getAllUsersForAdmin"
+      "admin/getAllUsersForAdmin"
     );
 
     const apiusers = data?.data || [] ;

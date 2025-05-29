@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
   const { data, isLoading, isError, error } = useGetData(
     "getAllUsers",
-    "http://localhost:5000/admin/getOverviewStats"
+    "admin/getOverviewStats"
   );
 
   useEffect(() => {

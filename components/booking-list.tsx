@@ -98,7 +98,7 @@ export function BookingList() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedBookings, setSelectedBookings] = useState<string[]>([])
 
-  const { data , isError , isLoading , error} = useGetData("getAllUsers", "http://localhost:5000/admin/getAllBookingsForAdmin")
+  const { data , isError , isLoading , error} = useGetData("getAllUsers", "admin/getAllBookingsForAdmin")
 
 
   const filteredBookings = data?.filter(
