@@ -70,7 +70,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>MakeupMunch Admin</title>
-        <meta name="description" content="MakeupMunch Admin Panel" />
+         <meta name="description" content="MakeupMunch Admin Panel" />
+  <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={inter.className}>
          <QueryProvider>
