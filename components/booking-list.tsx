@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CheckCircle, Edit, Eye, MoreHorizontal, Search, Trash2, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useGetData } from "@/services/queryHooks/useGetData"
 
 const bookings = [
   {
@@ -97,17 +98,20 @@ export function BookingList() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedBookings, setSelectedBookings] = useState<string[]>([])
 
-  const filteredBookings = bookings.filter(
-    (booking) =>
-      (booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.package.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.artist.toLowerCase().includes(searchQuery.toLowerCase())) &&
+  const { data , isError , isLoading , error} = useGetData("getAllUsers", "admin/getAllBookingsForAdmin")
+
+
+  const filteredBookings = data?.filter(
+    (booking: { bookingId: string; customerName: string; package: string; artistName: string; status: string }) =>
+      (booking?.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking?.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking?.package.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking?.artistName.toLowerCase().includes(searchQuery.toLowerCase())) &&
       (statusFilter === "all" || booking.status.toLowerCase() === statusFilter.toLowerCase()),
   )
 
   const toggleSelectAll = () => {
-    if (selectedBookings.length === filteredBookings.length) {
+    if (selectedBookings.length === filteredBookings?.length) {
       setSelectedBookings([])
     } else {
       setSelectedBookings(filteredBookings.map((booking) => booking.id))
@@ -136,6 +140,7 @@ const handleEditBooking = (id: string) => {
 }
 
 
+console.log("datatt," , data)
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -184,7 +189,7 @@ const handleEditBooking = (id: string) => {
             <TableRow>
               <TableHead className="w-[40px]">
                 <Checkbox
-                  checked={selectedBookings.length === filteredBookings.length && filteredBookings.length > 0}
+                  checked={selectedBookings.length === filteredBookings?.length && filteredBookings?.length > 0}
                   onCheckedChange={toggleSelectAll}
                   aria-label="Select all"
                 />
@@ -200,7 +205,7 @@ const handleEditBooking = (id: string) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredBookings.map((booking) => (
+            {filteredBookings?.map((booking) => (
               <TableRow key={booking.id}>
                 <TableCell>
                   <Checkbox
@@ -209,25 +214,37 @@ const handleEditBooking = (id: string) => {
                     aria-label={`Select ${booking.id}`}
                   />
                 </TableCell>
-                <TableCell className="font-medium">{booking.id}</TableCell>
+                <TableCell className="font-medium">{booking?.bookingId}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={booking.customer.avatar || "/placeholder.svg"} alt={booking.customer.name} />
-                      <AvatarFallback>{booking.customer.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={booking?.customerImage || "/placeholder.svg"} alt={booking?.customerName} />
+                      <AvatarFallback>{booking?.customerName.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium">{booking.customer.name}</span>
-                      <span className="text-xs text-muted-foreground">{booking.customer.email}</span>
+                      <span className="text-sm font-medium">{booking?.customerName}</span>
+                      <span className="text-xs text-muted-foreground">{booking?.customerEmail}</span>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{booking.package}</TableCell>
-                <TableCell>{booking.artist}</TableCell>
+                <TableCell>
+  {booking.services?.map(service => (
+    <div key={service.serviceName}>
+      <div className="font-medium">{service.serviceName}</div>
+      <ul className="text-sm text-muted-foreground list-disc ml-4">
+        {service.subServices?.map((sub, index) => (
+          <li key={index}>{sub.name} x{sub.quantity}</li>
+        ))}
+      </ul>
+    </div>
+  ))}
+</TableCell>
+
+                <TableCell>{booking?.artistName}</TableCell>
                 <TableCell>
                   <div className="flex flex-col">
-                    <span className="text-sm">{new Date(booking.date).toLocaleDateString()}</span>
-                    <span className="text-xs text-muted-foreground">{booking.time}</span>
+                    <span className="text-sm">{new Date(booking?.date).toLocaleDateString()}</span>
+                    <span className="text-xs text-muted-foreground">{booking?.time}</span>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -242,7 +259,7 @@ const handleEditBooking = (id: string) => {
                             : "destructive"
                     }
                     className={
-                      booking.status === "Confirmed"
+                      booking?.status === "Confirmed"
                         ? "bg-pink-500 hover:bg-pink-600"
                         : booking.status === "Completed"
                           ? "bg-green-500 hover:bg-green-600"
