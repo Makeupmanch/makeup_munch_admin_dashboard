@@ -1,10 +1,10 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  // process.env.REACT_APP_API_BASE_URL || "http://localhost:5001";
-  process.env.REACT_APP_API_BASE_URL || "https://kamraa.vercel.app/";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  // process.env.APP_API_BASE_URL || "http://localhost:5002";
+console.log("API_BASE_URL used:", process.env.NEXT_PUBLIC_API_URL);
 
-  
 
 const environment = process.env.NODE_ENV;
 
@@ -25,6 +25,8 @@ api.interceptors.request.use(
   (config) => {
     // Check if data is a FormData object
     console.log("application/json");
+    console.log("API_BASE_URL used:", API_BASE_URL);
+
     if (config.data instanceof FormData) {
       console.log("Sending multipart/form-data");
 
