@@ -20,63 +20,7 @@ import { CheckCircle, Edit, Eye, MoreHorizontal, Search, Star, Trash2, XCircle }
 import { useRouter } from "next/navigation"
 import { useGetData } from "@/services/queryHooks/useGetData"
 
-const artists = [
-  {
-    id: 1,
-    name: "Priya Sharma",
-    email: "priya@example.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-    category: "Bridal Makeup",
-    city: "Mumbai",
-    rating: 4.8,
-    status: "Approved",
-    featured: true,
-  },
-  {
-    id: 2,
-    name: "Neha Patel",
-    email: "neha@example.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-    category: "Party Makeup",
-    city: "Delhi",
-    rating: 4.6,
-    status: "Approved",
-    featured: false,
-  },
-  {
-    id: 3,
-    name: "Anjali Gupta",
-    email: "anjali@example.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-    category: "Bridal Makeup",
-    city: "Bangalore",
-    rating: 4.5,
-    status: "Approved",
-    featured: true,
-  },
-  {
-    id: 4,
-    name: "Meera Singh",
-    email: "meera@example.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-    category: "HD Makeup",
-    city: "Chennai",
-    rating: 4.2,
-    status: "Pending",
-    featured: false,
-  },
-  {
-    id: 5,
-    name: "Ritu Desai",
-    email: "ritu@example.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-    category: "Party Makeup",
-    city: "Hyderabad",
-    rating: 4.7,
-    status: "Rejected",
-    featured: false,
-  },
-]
+ 
 
 export function ArtistList() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -85,17 +29,15 @@ export function ArtistList() {
 
     const { data , isError , isLoading , error} = useGetData("getAllUsers", "admin/getAllArtistsForAdmin");
 
-    const apiArtists = data?.data || [];
-  
+const apiArtists = Array.isArray(data?.data) ? data.data : [];
 
-  const filteredArtists = apiArtists.filter(
-    (artist) =>
-      (artist?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        artist?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        artist?.specialties.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        artist?.city.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      (statusFilter === "all" || artist.Status.toLowerCase() === statusFilter.toLowerCase()),
-  )
+const filteredArtists = apiArtists.filter((artist) =>
+  (artist?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   artist?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+   artist?.specialties.join(", ").toLowerCase().includes(searchQuery.toLowerCase()) ||
+   artist?.city.toLowerCase().includes(searchQuery.toLowerCase())) &&
+  (statusFilter === "all" || artist?.Status.toLowerCase() === statusFilter.toLowerCase())
+);
 
   const toggleSelectAll = () => {
     if (selectedArtists.length === filteredArtists.length) {

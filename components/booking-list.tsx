@@ -20,78 +20,6 @@ import { CheckCircle, Edit, Eye, MoreHorizontal, Search, Trash2, XCircle } from 
 import { useRouter } from "next/navigation"
 import { useGetData } from "@/services/queryHooks/useGetData"
 
-const bookings = [
-  {
-    id: "B-1001",
-    customer: {
-      name: "Sophia Anderson",
-      email: "sophia@example.com",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    package: "Bridal Makeup",
-    artist: "Priya Sharma",
-    date: "2023-06-23",
-    time: "10:00 AM",
-    status: "Confirmed",
-    amount: "₹12,500",
-  },
-  {
-    id: "B-1002",
-    customer: {
-      name: "Emma Johnson",
-      email: "emma@example.com",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    package: "Party Makeup",
-    artist: "Neha Patel",
-    date: "2023-06-24",
-    time: "2:30 PM",
-    status: "Pending",
-    amount: "₹5,000",
-  },
-  {
-    id: "B-1003",
-    customer: {
-      name: "Olivia Williams",
-      email: "olivia@example.com",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    package: "Engagement Makeup",
-    artist: "Anjali Gupta",
-    date: "2023-06-25",
-    time: "11:00 AM",
-    status: "Completed",
-    amount: "₹8,000",
-  },
-  {
-    id: "B-1004",
-    customer: {
-      name: "Ava Brown",
-      email: "ava@example.com",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    package: "Pre-Wedding Shoot",
-    artist: "Meera Singh",
-    date: "2023-06-26",
-    time: "9:00 AM",
-    status: "Cancelled",
-    amount: "₹15,000",
-  },
-  {
-    id: "B-1005",
-    customer: {
-      name: "Isabella Jones",
-      email: "isabella@example.com",
-      avatar: "/placeholder.svg?height=32&width=32",
-    },
-    package: "HD Makeup",
-    artist: "Ritu Desai",
-    date: "2023-06-27",
-    time: "4:00 PM",
-    status: "Confirmed",
-    amount: "₹3,500",
-  },
-]
 
 export function BookingList() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -100,15 +28,16 @@ export function BookingList() {
 
   const { data , isError , isLoading , error} = useGetData("getAllUsers", "admin/getAllBookingsForAdmin")
 
+const bookings = Array.isArray(data) ? data : []
 
-  const filteredBookings = data?.filter(
-    (booking: { bookingId: string; customerName: string; package: string; artistName: string; status: string }) =>
-      (booking?.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking?.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking?.package.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking?.artistName.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      (statusFilter === "all" || booking.status.toLowerCase() === statusFilter.toLowerCase()),
-  )
+const filteredBookings = bookings.filter(
+  (booking) =>
+    (booking?.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking?.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking?.package?.toLowerCase?.().includes(searchQuery.toLowerCase()) || // optional
+      booking?.artistName.toLowerCase().includes(searchQuery.toLowerCase())) &&
+    (statusFilter === "all" || booking.status.toLowerCase() === statusFilter.toLowerCase())
+)
 
   const toggleSelectAll = () => {
     if (selectedBookings.length === filteredBookings?.length) {
