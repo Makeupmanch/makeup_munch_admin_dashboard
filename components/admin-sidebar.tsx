@@ -46,6 +46,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useRouter } from "next/navigation"
+import Cookies from "js-cookie"
 
 export function AdminSidebar() {
   const pathname = usePathname()
@@ -54,6 +56,14 @@ export function AdminSidebar() {
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(`${path}/`)
   }
+
+const router = useRouter()
+
+const handleLogout = () => {
+  Cookies.remove("authUser") // clear the login cookie
+  router.push("/login") // redirect to login page
+}
+
 
   return (
     <>
@@ -245,7 +255,7 @@ export function AdminSidebar() {
                   <span>Account Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem  onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>

@@ -23,10 +23,32 @@ import { RecentUsers } from "@/components/recent-users";
 import { useGetData } from "@/services/queryHooks/useGetData";
 import { useEffect, useState } from "react";
 
+type PackageBookingStats = {
+  totalPackageBookings: number;
+  packageBookingsLastMonth: number;
+  packageBookingsTwoMonthsAgo: number;
+};
+
+type ServiceBookingStats = {
+  totalServiceBookings: number;
+  serviceBookingsLastMonth: number;
+  serviceBookingsTwoMonthsAgo: number;
+};
+
+type UserStats = {
+  totalArtists: number;
+  totalCustomers: number;
+  artistsLastMonth: number;
+  customersLastMonth: number;
+};
+
+
 export default function DashboardPage() {
- const [packageBookings, setPackageBookings] = useState({});
-  const [serviceBookings, setServiceBookings] = useState({});
-  const [users, setUsers] = useState({});
+  const [packageBookings, setPackageBookings] = useState<PackageBookingStats | null>(null);
+  const [serviceBookings, setServiceBookings] = useState<ServiceBookingStats | null>(null);
+  const [users, setUsers] = useState<UserStats | null>(null);
+
+
 
   const { data, isLoading, isError, error } = useGetData(
     "getAllUsers",
@@ -34,12 +56,16 @@ export default function DashboardPage() {
   );
 
   useEffect(() => {
+
+    console.log("Data fetched:", data); // For debugging
     if (data?.data) {
       setPackageBookings(data.data.packageBookings);
       setServiceBookings(data.data.serviceBookings);
       setUsers(data.data.users);
     }
   }, [data]);
+
+
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -90,7 +116,7 @@ export default function DashboardPage() {
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{packageBookings?.totalPackageBookings}</div>
+                <div className="text-2xl font-bold">{packageBookings?.totalServiceBookings}</div>
                 <p className="text-xs text-muted-foreground">
                   +180 from last month
                 </p>
@@ -106,7 +132,7 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{users?.totalArtists}</div>
                 <p className="text-xs text-muted-foreground">
-                  +19 from last month
+                  +{users?.artistsLastMonth} from last month
                 </p>
               </CardContent>
             </Card>
@@ -120,11 +146,12 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{users?.totalCustomers}</div>
                 <p className="text-xs text-muted-foreground">
-                  +201 since last month
+                  +{users?.customersLastMonth} since last month
+                   
                 </p>
               </CardContent>
             </Card>
-            <Card>
+            {/* <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Recent Transactions
@@ -137,7 +164,7 @@ export default function DashboardPage() {
                   +58 from yesterday
                 </p>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
