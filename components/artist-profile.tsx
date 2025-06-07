@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Calendar, MapPin, Phone, Mail, User, Star, Activity } from "lucide-react"
+import { useGetData } from "@/services/queryHooks/useGetData"
 
 interface ArtistProfileProps {
   id: string
@@ -14,11 +15,18 @@ interface ArtistProfileProps {
 
 export function ArtistProfile({ id }: ArtistProfileProps) {
   const [artist, setArtist] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
+   const [isLoading, setIsLoading] = useState(true)
+
+
+    const { data:response , isLoadings, isError, error } = useGetData(`artist_${id}`, `admin/getArtistDetailsForAdmin/${id}`)
+
+
+  const artistData = response?.data
 
   useEffect(() => {
     // Simulate API call to fetch artist details
     setTimeout(() => {
+      
       setArtist({
         id: "A-1001",
         name: "Priya Sharma",
@@ -83,7 +91,7 @@ export function ArtistProfile({ id }: ArtistProfileProps) {
     }, 1000)
   }, [id])
 
-  if (isLoading) {
+  if (isLoadings) {
     return (
       <div className="flex items-center justify-center h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
@@ -94,54 +102,66 @@ export function ArtistProfile({ id }: ArtistProfileProps) {
   if (!artist) {
     return <div>Artist not found</div>
   }
+  if (isLoadings) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+      </div>
+    )
+  }
 
+  if (isError || !artist) {
+    return <div className="text-red-500">Failed to load artist data: {error?.message || "Unknown error"}</div>
+  }
+ 
+  
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="md:col-span-1">
           <CardHeader className="text-center">
             <Avatar className="h-24 w-24 mx-auto mb-4">
-              <AvatarImage src={artist.avatar || "/placeholder.svg"} alt={artist.name} />
-              <AvatarFallback className="text-2xl">{artist.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={artistData.profile_img || "/placeholder.svg"} alt={artistData.username} />
+              <AvatarFallback className="text-2xl">{artistData.username.charAt(0)}</AvatarFallback>
             </Avatar>
-            <CardTitle>{artist.name}</CardTitle>
-            <CardDescription>{artist.category}</CardDescription>
+            <CardTitle>{artistData.username}</CardTitle>
+            <CardDescription>{artistData.businessName}</CardDescription>
             <div className="flex items-center justify-center gap-2">
               <Badge
-                variant={artist.status === "Active" ? "default" : "secondary"}
+                variant={artistData.Status === "approved" ? "default" : "secondary"}
                 className={
-                  artist.status === "Active" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
+                  artistData.Status === "approved" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"
                 }
               >
-                {artist.status}
+                {artistData.Status}
               </Badge>
-              {artist.featured && <Badge className="bg-yellow-500 hover:bg-yellow-600">Featured</Badge>}
+              {artistData.providedByUs && <Badge className="bg-yellow-500 hover:bg-yellow-600">Featured</Badge>}
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <span>{artist.email}</span>
+                <span>{artistData.email}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <span>{artist.phone}</span>
+                <span>{artistData.phone}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>{artist.location}</span>
+                <span>{artistData.city}</span>
               </div>
             </div>
             <Separator />
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>Joined {new Date(artist.joinedDate).toLocaleDateString()}</span>
+                <span>Joined {new Date(artistData.joinedDate).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Activity className="h-4 w-4 text-muted-foreground" />
-                <span>Last active {new Date(artist.lastActive).toLocaleDateString()}</span>
+                <span>Last active {new Date(artistData.lastActive).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <User className="h-4 w-4 text-muted-foreground" />

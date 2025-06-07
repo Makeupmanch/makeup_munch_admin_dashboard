@@ -19,25 +19,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CheckCircle, Edit, Eye, MoreHorizontal, Search, Star, Trash2, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useGetData } from "@/services/queryHooks/useGetData"
+import { ShieldCheck } from "lucide-react"
 
- 
 
 export function ArtistList() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedArtists, setSelectedArtists] = useState<number[]>([]);
 
-    const { data , isError , isLoading , error} = useGetData("getAllUsers", "admin/getAllArtistsForAdmin");
+  const { data, isError, isLoading, error } = useGetData("getAllUsers", "admin/getAllArtistsForAdmin");
 
-const apiArtists = Array.isArray(data?.data) ? data.data : [];
+  const apiArtists = Array.isArray(data?.data) ? data.data : [];
 
-const filteredArtists = apiArtists.filter((artist) =>
-  (artist?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-   artist?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-   artist?.specialties.join(", ").toLowerCase().includes(searchQuery.toLowerCase()) ||
-   artist?.city.toLowerCase().includes(searchQuery.toLowerCase())) &&
-  (statusFilter === "all" || artist?.Status.toLowerCase() === statusFilter.toLowerCase())
-);
+  const filteredArtists = apiArtists.filter((artist) =>
+    (artist?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      artist?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      artist?.specialties.join(", ").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      artist?.city.toLowerCase().includes(searchQuery.toLowerCase())) &&
+    (statusFilter === "all" || artist?.Status.toLowerCase() === statusFilter.toLowerCase())
+  );
 
   const toggleSelectAll = () => {
     if (selectedArtists.length === filteredArtists.length) {
@@ -53,20 +53,20 @@ const filteredArtists = apiArtists.filter((artist) =>
     } else {
       setSelectedArtists([...selectedArtists, id])
     }
-  } 
+  }
 
 
   const router = useRouter()
 
-const handleViewProfile = (id: number) => {
-  router.push(`/artists/${id}`)
-}
+  const handleViewProfile = (id: number) => {
+    router.push(`/artists/${id}`)
+  }
 
-const handleEditArtist = (id: number) => {
-  router.push(`/artists/${id}/edit`)
-}
+  const handleEditArtist = (id: number) => {
+    router.push(`/artists/${id}/edit`)
+  }
 
-console.log("data", data);
+  console.log("data", data);
 
 
   return (
@@ -124,7 +124,7 @@ console.log("data", data);
               <TableHead>Artist</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>City</TableHead>
-              <TableHead>Rating</TableHead>
+              <TableHead>Joined</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -139,7 +139,7 @@ console.log("data", data);
                     aria-label={`Select ${artist?.username}`}
                   />
                 </TableCell>
-                <TableCell>
+                {/* <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={artist?.profile_img || "/placeholder.svg"} alt={artist?.username} />
@@ -157,22 +157,56 @@ console.log("data", data);
                       <span className="text-xs text-muted-foreground">{artist?.email}</span>
                     </div>
                   </div>
-                </TableCell>
-                <TableCell>{artist?.specialties}</TableCell>
+                </TableCell> */}
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={artist?.profile_img || "/placeholder.svg"} alt={artist?.username} />
+                      <AvatarFallback>{artist?.username.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium flex items-center gap-1">
+                          {artist?.username}
+                          {artist?.providedByUs && (
+                            <span title="Hub Provided">
+                              <ShieldCheck className="text-green-500 h-4 w-4" />
+                            </span>
+                          )}
+                        </span>
+
+                        {artist?.featured && (
+                          <Badge variant="outline" className="border-yellow-500 text-yellow-500">
+                            Featured
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">{artist?.email}</span>
+                    </div>
+                  </div>
+                </TableCell>                <TableCell>{artist?.specialties[0]}</TableCell>
                 <TableCell>{artist?.city}</TableCell>
+                {/* <Star className="mr-1 h-4 w-4 text-yellow-500" /> */}
+                {/* <TableCell>
+                  <div className="flex items-center">
+                  
+                    <span>{artist?.joinedDate}</span>
+                  </div>
+                </TableCell> */}
+
                 <TableCell>
                   <div className="flex items-center">
-                    <Star className="mr-1 h-4 w-4 text-yellow-500" />
-                    <span>{artist?.rating}</span>
+                    <span>{new Date(artist?.joinedDate).toLocaleString()}</span>
                   </div>
                 </TableCell>
+
                 <TableCell>
                   <Badge
                     variant={
-                      artist?.Status === "Approved" ? "default" : artist?.Status === "Pending" ? "outline" : "destructive"
+                      artist?.Status === "approved" ? "default" : artist?.Status === "Pending" ? "outline" : "destructive"
                     }
                     className={
-                      artist?.Status === "Approved"
+                      artist?.Status === "approved"
                         ? "bg-green-500 hover:bg-green-600"
                         : artist?.Status === "Pending"
                           ? "border-yellow-500 text-yellow-500"
@@ -193,11 +227,11 @@ console.log("data", data);
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleViewProfile(artist.id)}>
+                      <DropdownMenuItem onClick={() => handleViewProfile(artist?._id)}>
                         <Eye className="mr-2 h-4 w-4" />
                         <span>View Profile</span>
                       </DropdownMenuItem >
-                      <DropdownMenuItem onClick={() => handleEditArtist(artist.id)}>
+                      <DropdownMenuItem onClick={() => handleEditArtist(artist?._id)}>
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Edit</span>
                       </DropdownMenuItem>
