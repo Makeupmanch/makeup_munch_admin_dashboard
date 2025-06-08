@@ -7,69 +7,83 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Calendar, MapPin, Phone, Mail, Star, Activity } from "lucide-react"
+import { useGetData } from "@/services/queryHooks/useGetData"
 
 interface UserProfileProps {
   id: string
 }
 
 export function UserProfile({ id }: UserProfileProps) {
-  const [user, setUser] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  // const [user, setUser] = useState<any>(null)
+  // const [isDataLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    // Simulate API call to fetch user details
-    setTimeout(() => {
-      setUser({
-        id: "U-1001",
-        name: "Sophia Anderson",
-        email: "sophia@example.com",
-        phone: "+91 9876543210",
-        avatar: "/placeholder.svg?height=128&width=128",
-        location: "Mumbai, Maharashtra",
-        joinedDate: "2023-06-23T10:23:45",
-        lastActive: "2023-06-25T14:30:00",
-        status: "Active",
-        type: "Customer",
-        totalBookings: 5,
-        totalSpent: "₹45,000",
-        averageRating: 4.8,
-        bookings: [
-          {
-            id: "B-1001",
-            artist: "Priya Sharma",
-            package: "Bridal Makeup",
-            date: "2023-06-23",
-            status: "Completed",
-            amount: "₹12,500",
-          },
-          {
-            id: "B-1002",
-            artist: "Neha Patel",
-            package: "Party Makeup",
-            date: "2023-06-15",
-            status: "Completed",
-            amount: "₹5,000",
-          },
-          {
-            id: "B-1003",
-            artist: "Anjali Gupta",
-            package: "Engagement Makeup",
-            date: "2023-06-10",
-            status: "Completed",
-            amount: "₹8,000",
-          },
-        ],
-        preferences: {
-          notifications: true,
-          emailUpdates: true,
-          smsUpdates: false,
-          preferredLocation: "Mumbai",
-          preferredTimeSlot: "Morning",
-        },
-      })
-      setIsLoading(false)
-    }, 1000)
-  }, [id])
+
+
+  const { data, isLoading, isError, error } = useGetData(
+    `user_${id}`,
+    `admin/getUserDetailsForAdmin/${id}`
+  );
+
+
+
+  const user = data?.data
+
+
+
+  // useEffect(() => {
+  //   // Simulate API call to fetch user details
+  //   setTimeout(() => {
+  //     setUser({
+  //       id: "U-1001",
+  //       name: "Sophia Anderson",
+  //       email: "sophia@example.com",
+  //       phone: "+91 9876543210",
+  //       avatar: "/placeholder.svg?height=128&width=128",
+  //       location: "Mumbai, Maharashtra",
+  //       joinedDate: "2023-06-23T10:23:45",
+  //       lastActive: "2023-06-25T14:30:00",
+  //       status: "Active",
+  //       type: "Customer",
+  //       totalBookings: 5,
+  //       totalSpent: "₹45,000",
+  //       averageRating: 4.8,
+  //       bookings: [
+  //         {
+  //           id: "B-1001",
+  //           artist: "Priya Sharma",
+  //           package: "Bridal Makeup",
+  //           date: "2023-06-23",
+  //           status: "Completed",
+  //           amount: "₹12,500",
+  //         },
+  //         {
+  //           id: "B-1002",
+  //           artist: "Neha Patel",
+  //           package: "Party Makeup",
+  //           date: "2023-06-15",
+  //           status: "Completed",
+  //           amount: "₹5,000",
+  //         },
+  //         {
+  //           id: "B-1003",
+  //           artist: "Anjali Gupta",
+  //           package: "Engagement Makeup",
+  //           date: "2023-06-10",
+  //           status: "Completed",
+  //           amount: "₹8,000",
+  //         },
+  //       ],
+  //       preferences: {
+  //         notifications: true,
+  //         emailUpdates: true,
+  //         smsUpdates: false,
+  //         preferredLocation: "Mumbai",
+  //         preferredTimeSlot: "Morning",
+  //       },
+  //     })
+  //     setIsLoading(false)
+  //   }, 1000)
+  // }, [id])
 
   if (isLoading) {
     return (
@@ -83,23 +97,56 @@ export function UserProfile({ id }: UserProfileProps) {
     return <div>User not found</div>
   }
 
+
+  if (isError || !user) {
+    return (
+      <div className="text-red-500">
+        Failed to load user data: {error?.message || "Unknown error"}
+      </div>
+    )
+  }
+
+
+  const fullName = user.username || "N/A"
+  const location = user.addresses?.[0]
+    ? `${user.addresses[0].city}, ${user.addresses[0].state}`
+    : "Location not available"
+
+
+
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="md:col-span-1">
           <CardHeader className="text-center">
             <Avatar className="h-24 w-24 mx-auto mb-4">
-              <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-              <AvatarFallback className="text-2xl">{user.name.charAt(0)}</AvatarFallback>
+              {user.profile_img && user.profile_img.trim() !== "" ? (
+                <AvatarImage src={user.profile_img} alt={fullName} />
+              ) : (
+                <AvatarFallback className="text-5xl">{fullName.charAt(0).toUpperCase()}</AvatarFallback>
+              )}
             </Avatar>
-            <CardTitle>{user.name}</CardTitle>
-            <CardDescription>{user.type}</CardDescription>
-            <Badge
-              variant={user.status === "Active" ? "default" : "secondary"}
+
+            <CardTitle>{fullName}</CardTitle>
+            <CardDescription>
+              {(user.role || "User") + (user.gender ? ` • ${user.gender}` : " • N/A")}
+            </CardDescription>            {/* <Badge
+              variant={user.isLogin === "Active" ? "default" : "secondary"}
               className={user.status === "Active" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"}
             >
               {user.status}
+            </Badge> */}
+
+            <Badge
+              className={
+                user.isLogin === "Active"
+                  ? "bg-green-500 hover:bg-green-600"
+                  : "bg-red-500 hover:bg-red-600"
+              }
+            >
+              {user.isLogin}
             </Badge>
+
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -113,7 +160,7 @@ export function UserProfile({ id }: UserProfileProps) {
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>{user.location}</span>
+                <span>{location}</span>
               </div>
             </div>
             <Separator />
@@ -123,8 +170,8 @@ export function UserProfile({ id }: UserProfileProps) {
                 <span>Joined {new Date(user.joinedDate).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <Activity className="h-4 w-4 text-muted-foreground" />
-                <span>Last active {new Date(user.lastActive).toLocaleDateString()}</span>
+                <Activity className="h-4 w-3 text-muted-foreground" />
+                <span>Last active {new Date(user.lastLoginAt).toLocaleString()}</span>
               </div>
             </div>
           </CardContent>
@@ -137,7 +184,7 @@ export function UserProfile({ id }: UserProfileProps) {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="text-center p-4 border rounded-lg">
-                <div className="text-2xl font-bold text-pink-600">{user.totalBookings}</div>
+                <div className="text-2xl font-bold text-pink-600">{user.bookingCount}</div>
                 <div className="text-sm text-muted-foreground">Total Bookings</div>
               </div>
               <div className="text-center p-4 border rounded-lg">
@@ -162,7 +209,9 @@ export function UserProfile({ id }: UserProfileProps) {
           <CardDescription>Latest booking history</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          {user.bookings.length === 0 ? (
+            <div className="text-muted-foreground text-sm">No bookings found</div>
+          ) : (<Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Booking ID</TableHead>
@@ -193,10 +242,11 @@ export function UserProfile({ id }: UserProfileProps) {
               ))}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
 
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>User Preferences</CardTitle>
           <CardDescription>Account settings and preferences</CardDescription>
@@ -241,7 +291,7 @@ export function UserProfile({ id }: UserProfileProps) {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   )
 }

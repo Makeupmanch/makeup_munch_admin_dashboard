@@ -107,11 +107,11 @@ export function UserList() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
 
   const { data, isLoading, isError, error } = useGetData(
-        "getAllUsers",
-      "admin/getAllUsersForAdmin"
-    );
+    "getAllUsers",
+    "admin/getAllUsersForAdmin"
+  );
 
-    const apiusers = data?.data || [] ;
+  const apiusers = data?.data || [];
 
   const filteredUsers = apiusers.filter(
     (user: { username: string; email: string; _id: string; status: string; location: string }) =>
@@ -140,12 +140,12 @@ export function UserList() {
 
 
 
-   const router = useRouter()
-  
+  const router = useRouter()
+
   const handleViewUser = (id: string) => {
     router.push(`/users/${id}`)
   }
-  
+
   const handleEditUser = (id: string) => {
     router.push(`/users/${id}/edit`)
   }
@@ -270,11 +270,11 @@ export function UserList() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={()=> handleViewUser(user.id)}>
+                      <DropdownMenuItem onClick={() => handleViewUser(user._id)}>
                         <Eye className="mr-2 h-4 w-4" />
                         <span>View Profile</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={()=> handleEditUser(user.id)}>
+                      <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Edit</span>
                       </DropdownMenuItem>

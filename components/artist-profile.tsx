@@ -24,6 +24,8 @@ export function ArtistProfile({ id }: ArtistProfileProps) {
   const artistData = response?.data
 
   useEffect(() => {
+
+    console.log(artistData)
     // Simulate API call to fetch artist details
     setTimeout(() => {
       

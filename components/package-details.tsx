@@ -6,44 +6,44 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Clock, Package, MapPin, Star, Activity, CreditCard } from "lucide-react"
+import { useGetData } from "@/services/queryHooks/useGetData"
 
 interface PackageDetailsProps {
   id: string
 }
 
+
+
+
+
 export function PackageDetails({ id }: PackageDetailsProps) {
   const [packageData, setPackageData] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isDataLoading, setIsLoading] = useState(true)
+
+  const { data, isLoading, isError, error } = useGetData(`packageDetail_${id}`, `/admin/packages/${id}`)
 
   useEffect(() => {
     // Simulate API call to fetch package details
     setTimeout(() => {
       setPackageData({
         id: "P-1001",
-        name: "Bridal Deluxe Package",
-        category: "Bridal",
-        price: "₹25,000",
-        duration: "4 hours",
+        name:  data.data.name,
+        category: data.data.category || "General",
+        price: `₹${data.data.price}`,
+        duration: data.data.duration || "2 hours",
         description:
-          "Our premium bridal makeup package includes everything you need for your special day. Professional makeup application using high-end products, hairstyling, saree draping, and jewelry setting. A makeup assistant will be present throughout to ensure you look perfect all day. Includes a pre-wedding trial session and a touch-up kit.",
-        status: "Active",
-        featured: true,
-        inclusions: [
-          "Makeup Application",
-          "Hairstyling",
-          "Saree/Outfit Draping",
-          "Jewelry Setting",
-          "Touch-up Kit",
-          "Pre-event Trial",
-          "Makeup Assistant",
-          "Travel Included",
-        ],
-        cities: ["Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad"],
+         data.data.description ||
+          "No description available for this package.",
+       status: data.data.status || "Active",
+        featured: data.data.featured ?? false,
+       inclusions: data.data.services || [],
+
+        cities:  ["Lucnow", "Delhi", "Bangalore", "Chennai", "Hyderabad"],
         totalBookings: 45,
         totalRevenue: "₹11,25,000",
         averageRating: 4.9,
-        createdAt: "2023-01-15T10:23:45",
-        updatedAt: "2023-06-20T14:30:00",
+     createdAt: data.data.createdAt,
+        updatedAt: data.data.updatedAt,
         recentBookings: [
           {
             id: "B-1001",
