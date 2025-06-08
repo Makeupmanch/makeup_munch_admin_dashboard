@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -14,10 +14,19 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
 import { usePutData } from "@/services/queryHooks/usePutData"
 import { useGetData } from "@/services/queryHooks/useGetData"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2, Plus, X } from "lucide-react"
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -31,28 +40,8 @@ const formSchema = z.object({
   active: z.boolean().default(true),
 })
 
-const availableServices = [
-  { id: "makeup", label: "Makeup Application" },
-  { id: "hairstyling", label: "Hairstyling" },
-  { id: "draping", label: "Saree/Outfit Draping" },
-  { id: "jewelry", label: "Jewelry Setting" },
-  { id: "touchup", label: "Touch-up Kit" },
-  { id: "trial", label: "Pre-event Trial" },
-  { id: "assistant", label: "Makeup Assistant" },
-  { id: "travel", label: "Travel Included" },
-  { id: "airbrush", label: "Celebrity-Style Airbrush Makeup" },
-  { id: "skincare", label: "Pre-Bridal Skincare Plan" },
-  { id: "nailart", label: "Advanced Nail Art" },
-  { id: "bodytreatment", label: "Full Body De-Tan & Glow Treatment" },
-  { id: "massage", label: "Relaxing Aromatherapy Massage" },
-  { id: "Full_Body_Massage", label: "Full Body Massage (Relaxing)" },
-  { id: "aroma_pedicure", label: "Aroma Pedicure" },
-
-
-
-]
-
-const cities = [
+// Default cities that are always available
+const defaultCities = [
   { id: "mumbai", label: "Mumbai" },
   { id: "delhi", label: "Delhi" },
   { id: "bangalore", label: "Bangalore" },
@@ -64,25 +53,49 @@ const cities = [
 
 interface EditPackageFormProps {
   id: string
-  initialData?: any // Data passed from details page
 }
 
-export function EditPackageForm({ id, initialData }: EditPackageFormProps) {
+export function EditPackageForm({ id }: EditPackageFormProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
-  const [shouldFetchData, setShouldFetchData] = useState(!initialData)
 
-  // Only fetch data if not provided via props
+  // Get initial data from URL params
+  const [initialData, setInitialData] = useState<any>(null)
+  const [shouldFetchData, setShouldFetchData] = useState(true)
+
+  // Dynamic services and cities state - start with package services only
+  const [availableServices, setAvailableServices] = useState<{ id: string; label: string; isNew?: boolean }[]>([])
+  const [availableCities, setAvailableCities] = useState(defaultCities)
+
+  // Dialog states
+  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false)
+  const [isCityDialogOpen, setIsCityDialogOpen] = useState(false)
+  const [newServiceName, setNewServiceName] = useState("")
+  const [newCityName, setNewCityName] = useState("")
+
+  // Get data from URL params
+  useEffect(() => {
+    const dataParam = searchParams.get("data")
+    if (dataParam) {
+      try {
+        const decodedData = JSON.parse(decodeURIComponent(dataParam))
+        setInitialData(decodedData)
+        setShouldFetchData(false)
+      } catch (error) {
+        console.error("Error parsing package data:", error)
+      }
+    }
+  }, [searchParams])
+
+  // API hooks
   const {
     data: packageData,
     isLoading: isLoadingPackage,
     isError: isLoadError,
     error: loadError,
-  } = useGetData(`getPackage-${id}`, `/admin/packages/${id}`, {
-    enabled: shouldFetchData, // Only fetch if we don't have initial data
-  })
+  } = useGetData(`getPackage-${id}`, `/admin/packages/${id}`, { enabled: shouldFetchData })
 
-  // Update package mutation
   const { mutate: updatePackage, isPending: isUpdating } = usePutData(`/admin/packages/${id}`)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -100,30 +113,145 @@ export function EditPackageForm({ id, initialData }: EditPackageFormProps) {
     },
   })
 
-  // Transform API services to match our available services
-  const transformServicesToIds = (apiServices: string[]) => {
-    const serviceMap: { [key: string]: string } = {
-      "Celebrity-Style Airbrush Makeup for Main Event": "airbrush",
-      "Customized Hair Styling for Multiple Events": "hairstyling",
-      "Personalized Pre-Bridal Skincare Plan (6 Sessions)": "skincare",
-      "Advanced Nail Art with Gel Extensions": "nailart",
-      "Full Body De-Tan & Glow Treatment": "bodytreatment",
-      "Relaxing Aromatherapy Full Body Massage": "massage",
-      "Assistant for Touch-ups (up to 4 hours)": "assistant",
-      "Makeup Application": "makeup",
-      "Saree/Outfit Draping": "draping",
-      "Jewelry Setting": "jewelry",
-      "Touch-up Kit": "touchup",
-      "Pre-event Trial": "trial",
-      "Travel Included": "travel",
-      "Full Body Massage (Relaxing)": "Full_Body_Massage",
-      "Aroma Pedicure": "aroma_pedicure"
+  // Create services from package data
+  const createServicesFromPackageData = (packageServices: string[]) => {
+    return packageServices.map((serviceName, index) => ({
+      id: serviceName.toLowerCase().replace(/\s+/g, "_"),
+      label: serviceName,
+      isNew: false, // These are existing services from the package
+    }))
+  }
 
+  // Add new service locally (no API call)
+  const handleAddService = () => {
+    if (!newServiceName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a service name",
+        variant: "destructive",
+      })
+      return
     }
 
-    return apiServices
-      .map((service) => serviceMap[service] || service.toLowerCase().replace(/\s+/g, ""))
-      .filter((service) => availableServices.some((s) => s.id === service))
+    const serviceId = newServiceName.toLowerCase().replace(/\s+/g, "_")
+
+    // Check if service already exists
+    if (availableServices.some((s) => s.id === serviceId || s.label.toLowerCase() === newServiceName.toLowerCase())) {
+      toast({
+        title: "Error",
+        description: "This service already exists",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const newService = {
+      id: serviceId,
+      label: newServiceName.trim(),
+      isNew: true,
+    }
+
+    // Add to local state only
+    setAvailableServices((prev) => [...prev, newService])
+
+    toast({
+      title: "Service added",
+      description: `${newServiceName} has been added. Select it to include in the package.`,
+    })
+
+    setNewServiceName("")
+    setIsServiceDialogOpen(false)
+  }
+
+  // Add new city locally (no API call)
+  const handleAddCity = () => {
+    if (!newCityName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a city name",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const cityId = newCityName.toLowerCase().replace(/\s+/g, "_")
+
+    // Check if city already exists
+    if (availableCities.some((c) => c.id === cityId || c.label.toLowerCase() === newCityName.toLowerCase())) {
+      toast({
+        title: "Error",
+        description: "This city already exists",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const newCity = {
+      id: cityId,
+      label: newCityName.trim(),
+      isNew: true,
+    }
+
+    // Add to local state only
+    setAvailableCities((prev) => [...prev, newCity])
+
+    toast({
+      title: "City added",
+      description: `${newCityName} has been added. Select it to include in the package.`,
+    })
+
+    setNewCityName("")
+    setIsCityDialogOpen(false)
+  }
+
+  // Remove service (only new ones)
+  const handleRemoveService = (serviceId: string) => {
+    const service = availableServices.find((s) => s.id === serviceId)
+
+    if (!service?.isNew) {
+      toast({
+        title: "Cannot remove",
+        description: "Package services cannot be removed, only new services can be removed",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setAvailableServices((prev) => prev.filter((s) => s.id !== serviceId))
+
+    // Also remove from form if selected
+    const currentServices = form.getValues("services")
+    if (currentServices.includes(serviceId)) {
+      form.setValue(
+        "services",
+        currentServices.filter((s) => s !== serviceId),
+      )
+    }
+  }
+
+  // Remove city (only new ones)
+  const handleRemoveCity = (cityId: string) => {
+    const city = availableCities.find((c) => c.id === cityId)
+
+    if (!city?.isNew) {
+      toast({
+        title: "Cannot remove",
+        description: "Default cities cannot be removed, only new cities can be removed",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setAvailableCities((prev) => prev.filter((c) => c.id !== cityId))
+
+    // Also remove from form if selected
+    const currentCities = form.getValues("cities")
+    if (currentCities.includes(cityId)) {
+      form.setValue(
+        "cities",
+        currentCities.filter((c) => c !== cityId),
+      )
+    }
   }
 
   // Populate form when package data is available
@@ -131,35 +259,62 @@ export function EditPackageForm({ id, initialData }: EditPackageFormProps) {
     const dataToUse = initialData || packageData?.data
 
     if (dataToUse) {
-      // Transform services from API format to form format
-      const transformedServices = dataToUse.services ? transformServicesToIds(dataToUse.services) : []
+      // Create services from package data only
+      if (dataToUse.services && dataToUse.services.length > 0) {
+        const packageServices = createServicesFromPackageData(dataToUse.services)
+        setAvailableServices(packageServices)
 
-      form.reset({
-        name: dataToUse.name || "",
-        category: dataToUse.category || "bridal", // Default category
-        price: dataToUse.price?.toString() || "",
-        description: dataToUse.description || "",
-        duration: dataToUse.duration?.toString() || "4", // Default duration
-        services: transformedServices,
-        cities: dataToUse.cities || ["mumbai"], // Default city
-        featured: dataToUse.featured || false,
-        active: dataToUse.active !== undefined ? dataToUse.active : true,
-      })
+        // Set selected services to all package services
+        const serviceIds = packageServices.map((s) => s.id)
+
+        form.reset({
+          name: dataToUse.name || "",
+          category: dataToUse.category || "bridal",
+          price: dataToUse.price?.toString() || "",
+          description: dataToUse.description || "",
+          duration: dataToUse.duration?.toString() || "4",
+          services: serviceIds,
+          cities: dataToUse.cities || ["mumbai"],
+          featured: dataToUse.featured || false,
+          active: dataToUse.active !== undefined ? dataToUse.active : true,
+        })
+      } else {
+        // No services in package, start with empty
+        setAvailableServices([])
+        form.reset({
+          name: dataToUse.name || "",
+          category: dataToUse.category || "bridal",
+          price: dataToUse.price?.toString() || "",
+          description: dataToUse.description || "",
+          duration: dataToUse.duration?.toString() || "4",
+          services: [],
+          cities: dataToUse.cities || ["mumbai"],
+          featured: dataToUse.featured || false,
+          active: dataToUse.active !== undefined ? dataToUse.active : true,
+        })
+      }
     }
   }, [initialData, packageData, form])
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Transform services back to API format
+    // Transform services back to API format (use labels)
     const transformedServices = values.services.map((serviceId) => {
       const service = availableServices.find((s) => s.id === serviceId)
       return service ? service.label : serviceId
+    })
+
+    // Transform cities back to API format (use labels)
+    const transformedCities = values.cities.map((cityId) => {
+      const city = availableCities.find((c) => c.id === cityId)
+      return city ? city.label : cityId
     })
 
     const updateData = {
       ...values,
       price: Number.parseFloat(values.price),
       duration: Number.parseInt(values.duration),
-      services: transformedServices, // Use transformed services
+      services: transformedServices,
+      cities: transformedCities,
     }
 
     updatePackage(updateData, {
@@ -180,27 +335,17 @@ export function EditPackageForm({ id, initialData }: EditPackageFormProps) {
     })
   }
 
-  // Loading state (only show if we're fetching data and don't have initial data)
+  // Loading state
   if (shouldFetchData && isLoadingPackage) {
     return (
       <div className="space-y-8">
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-10 w-full" />
-          </div>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ))}
         </div>
         <div className="space-y-2">
           <Skeleton className="h-4 w-20" />
@@ -218,7 +363,7 @@ export function EditPackageForm({ id, initialData }: EditPackageFormProps) {
     )
   }
 
-  // Error state (only show if we're fetching data and there's an error)
+  // Error state
   if (shouldFetchData && isLoadError) {
     return (
       <div className="flex flex-col items-center justify-center h-[400px] text-center">
@@ -324,45 +469,156 @@ export function EditPackageForm({ id, initialData }: EditPackageFormProps) {
 
         <div className="space-y-4">
           <div>
-            <h3 className="mb-4 text-sm font-medium">Package Services</h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              {availableServices.map((item) => (
-                <FormField
-                  key={item.id}
-                  control={form.control}
-                  name="services"
-                  render={({ field }) => {
-                    return (
-                      <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value?.includes(item.id)}
-                            onCheckedChange={(checked) => {
-                              return checked
-                                ? field.onChange([...field.value, item.id])
-                                : field.onChange(field.value?.filter((value) => value !== item.id))
-                            }}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">{item.label}</FormLabel>
-                      </FormItem>
-                    )
-                  }}
-                />
-              ))}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium">Package Services</h3>
+              <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Service
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Service</DialogTitle>
+                    <DialogDescription>
+                      Create a new service option. It will be available for selection in this package.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="serviceName" className="text-sm font-medium">
+                        Service Name
+                      </label>
+                      <Input
+                        id="serviceName"
+                        placeholder="Enter service name"
+                        value={newServiceName}
+                        onChange={(e) => setNewServiceName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault()
+                            handleAddService()
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsServiceDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleAddService}>Add Service</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
+
+            {availableServices.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No services available. Add a new service to get started.</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-3">
+                {availableServices.map((item) => (
+                  <FormField
+                    key={item.id}
+                    control={form.control}
+                    name="services"
+                    render={({ field }) => {
+                      return (
+                        <FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value?.includes(item.id)}
+                              onCheckedChange={(checked) => {
+                                return checked
+                                  ? field.onChange([...field.value, item.id])
+                                  : field.onChange(field.value?.filter((value) => value !== item.id))
+                              }}
+                            />
+                          </FormControl>
+                          <div className="flex items-center gap-2 flex-1">
+                            <FormLabel className="font-normal flex-1">
+                              {item.label}
+                              {item.isNew && <span className="text-xs text-blue-500 ml-1">(New)</span>}
+                            </FormLabel>
+                            {item.isNew && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                                onClick={() => handleRemoveService(item.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </FormItem>
+                      )
+                    }}
+                  />
+                ))}
+              </div>
+            )}
             <FormMessage>{form.formState.errors.services?.message}</FormMessage>
           </div>
 
           <div>
-            <h3 className="mb-4 text-sm font-medium">Available Cities</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium">Available Cities</h3>
+              <Dialog open={isCityDialogOpen} onOpenChange={setIsCityDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add City
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New City</DialogTitle>
+                    <DialogDescription>
+                      Add a new city where services are available. It will be available for selection in this package.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="cityName" className="text-sm font-medium">
+                        City Name
+                      </label>
+                      <Input
+                        id="cityName"
+                        placeholder="Enter city name"
+                        value={newCityName}
+                        onChange={(e) => setNewCityName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault()
+                            handleAddCity()
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCityDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleAddCity}>Add City</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-3">
-              {cities.map((city) => (
+              {availableCities.map((city) => (
                 <FormField
                   key={city.id}
                   control={form.control}
                   name="cities"
                   render={({ field }) => {
+                    const isCustomCity = !defaultCities.some((c) => c.id === city.id)
                     return (
                       <FormItem key={city.id} className="flex flex-row items-start space-x-3 space-y-0">
                         <FormControl>
@@ -375,7 +631,23 @@ export function EditPackageForm({ id, initialData }: EditPackageFormProps) {
                             }}
                           />
                         </FormControl>
-                        <FormLabel className="font-normal">{city.label}</FormLabel>
+                        <div className="flex items-center gap-2 flex-1">
+                          <FormLabel className="font-normal flex-1">
+                            {city.label}
+                            {isCustomCity && <span className="text-xs text-blue-500 ml-1">(New)</span>}
+                          </FormLabel>
+                          {isCustomCity && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                              onClick={() => handleRemoveCity(city.id)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
                       </FormItem>
                     )
                   }}
